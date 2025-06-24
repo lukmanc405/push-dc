@@ -2,6 +2,7 @@ import aiohttp
 import asyncio
 import random
 import os
+import time
 from datetime import datetime
 
 # ANSI Color
@@ -22,7 +23,6 @@ with open("channel.txt") as f:
 
 # INPUT USER
 auto_delete = input("AUTO DELETE PESAN? (Y/N): ").lower() == 'y'
-hapus_delay = int(input("SET WAKTU HAPUS PESAN (DETIK): ")) if auto_delete else 0
 kirim_delay = int(input("SET WAKTU KIRIM PESAN (DETIK): "))
 mode_verbose = input("VERBOSE MODE? (Y/N): ").lower() == 'y'
 rotasi_durasi = int(input("ROTASI PESAN SETIAP BERAPA DETIK?: "))
@@ -37,19 +37,23 @@ headers = {
     'Content-Type': 'application/json'
 }
 
+# Countdown
 print(f"{YELLOW}[INFO]{RESET} MULAI DALAM:")
 for i in range(3, 0, -1):
     print(i)
-    asyncio.run(asyncio.sleep(1))
+    time.sleep(1)
 
-os.system("clear")
+# Clear screen sesuai OS
+os.system('cls' if os.name == 'nt' else 'clear')
 print(f"{YELLOW}[INFO]{RESET} BOT AKTIF. TEKAN CTRL+C UNTUK BERHENTI.\n")
 
+# Fungsi Log
 async def log(text):
     now = datetime.now().strftime("%H:%M:%S")
     log_file.write(f"[{now}] {text}\n")
     log_file.flush()
 
+# Fungsi Kirim Pesan
 async def kirim_pesan(session, channel_name, channel_id, content):
     global total_terkirim
     try:
@@ -67,7 +71,6 @@ async def kirim_pesan(session, channel_name, channel_id, content):
                 await log(f"{channel_name} >> {content}")
 
                 if auto_delete:
-                    await asyncio.sleep(hapus_delay)
                     async with session.delete(
                         f'https://discord.com/api/v9/channels/{channel_id}/messages/{msg_id}',
                         headers=headers
@@ -88,6 +91,7 @@ async def kirim_pesan(session, channel_name, channel_id, content):
             print(f"{RED}[EXCEPTION]{RESET} {e}")
         await log(f"[ERROR] {e}")
 
+# Main Loop
 async def main():
     global pesan_index
     async with aiohttp.ClientSession() as session:
@@ -101,10 +105,9 @@ async def main():
             await asyncio.gather(*tasks)
             await asyncio.sleep(kirim_delay)
 
+# Run Program
 try:
     asyncio.run(main())
 except KeyboardInterrupt:
     log_file.close()
     print(f"{YELLOW}[INFO]{RESET} PROGRAM DIHENTIKAN.")
-	
-
