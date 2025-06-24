@@ -13,11 +13,8 @@ apt update && apt upgrade -y
 # Install OpenSSL
 pkg install openssl -y
 
-# Install Aiohttp
-pkg install aiohttp -y
-
 # Install Python packages
-pip install requests colorama
+pip install requests colorama aiohttp
 
 # Change directory
 cd push-dc
