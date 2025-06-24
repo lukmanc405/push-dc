@@ -12,6 +12,7 @@ apt update && apt upgrade -y
 
 # Install OpenSSL
 pkg install openssl -y
+pkg install aiohttp -y
 
 # Install Python packages
 pip install requests colorama
