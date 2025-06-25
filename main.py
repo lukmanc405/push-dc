@@ -2,6 +2,7 @@ import aiohttp
 import asyncio
 import random
 import os
+import time
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -46,7 +47,7 @@ os.makedirs("log", exist_ok=True)
 # Input User
 print("\nPILIH MODE:")
 print("1. Kirim biasa (tidak dihapus)")
-print("2. Kirim lalu hapus otomatis")
+print("2. Kirim & hapus stealth (super cepat, auto delete)")
 print("3. AI Chat (pesan dari GPT-3.5)")
 print("4. Kirim emoticon random")
 mode = input("Mode: ").strip()
@@ -56,7 +57,11 @@ max_delay = int(input("Delay maksimal antar pesan (detik): "))
 
 hapus_delay = 0
 if mode == "2":
-    hapus_delay = int(input("Delay hapus pesan (detik): "))
+    hapus_delay = 0.2  # Stealth auto-delete
+
+# Untuk summary saat dihentikan
+start_time = time.time()
+total_sent = 0
 
 
 async def log(channel_name, content):
@@ -73,10 +78,6 @@ async def chat_ai(prompt):
     }
     async with aiohttp.ClientSession() as session:
         async with session.post(url_ai, headers=headers_ai, json=payload) as res:
-            print(f"[DEBUG AI] Status: {res.status}")
-            response_text = await res.text()
-            print(f"[DEBUG AI] Respon: {response_text}")
-
             if res.status in [200, 201]:
                 data = await res.json()
                 return data["choices"][0]["message"]["content"]
@@ -85,6 +86,7 @@ async def chat_ai(prompt):
 
 
 async def kirim_pesan(session, channel_name, channel_id, content):
+    global total_sent
     try:
         payload = {"content": content}
         async with session.post(f"https://discord.com/api/v9/channels/{channel_id}/messages",
@@ -95,6 +97,7 @@ async def kirim_pesan(session, channel_name, channel_id, content):
                 msg_id = data["id"]
                 print(f"[✓] {now} | {channel_name} | {content}")
                 await log(channel_name, content)
+                total_sent += 1
 
                 if mode == "2":
                     await asyncio.sleep(hapus_delay)
@@ -104,6 +107,8 @@ async def kirim_pesan(session, channel_name, channel_id, content):
                     ) as del_res:
                         if del_res.status == 204:
                             print(f"[-] {now} | Pesan dihapus di {channel_name}")
+                        else:
+                            print(f"[!] Gagal hapus: {del_res.status}")
 
             elif res.status == 429:
                 retry = (await res.json()).get("retry_after", 5)
@@ -141,4 +146,10 @@ try:
     print("\nBOT AKTIF. Tekan CTRL+C untuk berhenti.\n")
     asyncio.run(main())
 except KeyboardInterrupt:
+    end_time = time.time()
+    elapsed = end_time - start_time
+    minutes = int(elapsed // 60)
+    seconds = int(elapsed % 60)
     print("\nBot dihentikan.")
+    print(f"⏱ Durasi berjalan: {minutes} menit {seconds} detik")
+    print(f"📨 Total pesan terkirim: {total_sent}")
