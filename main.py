@@ -2,25 +2,22 @@ import aiohttp
 import asyncio
 import random
 import os
-import time
-import json
 from datetime import datetime
 from dotenv import load_dotenv
 
 # Load .env
 load_dotenv()
 
-# ANSI Color
-RED = "\033[91m"
-GREEN = "\033[92m"
-YELLOW = "\033[93m"
-RESET = "\033[0m"
+TOKEN = os.getenv("TOKEN")
+OPENAI_KEY = os.getenv("OPENAI_KEY")
 
-# BACA KONFIGURASI DARI .env
-token = os.getenv("TOKEN")
-openai_key = os.getenv("OPENAI_KEY")
+if not TOKEN:
+    raise Exception("Token Discord tidak ditemukan! Cek file .env")
 
-# BACA FILE LAIN
+if not OPENAI_KEY:
+    raise Exception("API Key OpenAI tidak ditemukan! Cek file .env")
+
+# Baca data dari file
 with open("pesan.txt") as f:
     messages = [line.strip() for line in f if line.strip()]
 
@@ -30,135 +27,118 @@ with open("channel.txt") as f:
 with open("emote.txt") as f:
     emotes = [line.strip() for line in f if line.strip()]
 
-# INPUT USER
-print("\nPILIH MODE:\n1. No Delete\n2. Delete\n3. AI Chat (GPT)\n4. Emot Only")
-mode_pilihan = input("Pilih Mode (1/2/3/4): ")
-
-min_delay = int(input("SET DELAY MINIMAL KIRIM PESAN (DETIK): "))
-max_delay = int(input("SET DELAY MAKSIMAL KIRIM PESAN (DETIK): "))
-rotasi_durasi = int(input("ROTASI PESAN SETIAP BERAPA DETIK?: "))
-
-# STATE
-pesan_index = 0
-total_terkirim = 0
-mode_verbose = True
-
-headers = {
-    'Authorization': token,
-    'Content-Type': 'application/json'
+# Konfigurasi Header
+headers_dc = {
+    "Authorization": TOKEN,
+    "Content-Type": "application/json"
 }
 
-# Countdown
-print(f"{YELLOW}[INFO]{RESET} MULAI DALAM:")
-for i in range(3, 0, -1):
-    print(i)
-    time.sleep(1)
+headers_ai = {
+    "Content-Type": "application/json",
+    "Authorization": f"Bearer {OPENAI_KEY}"
+}
 
-os.system('cls' if os.name == 'nt' else 'clear')
-print(f"{YELLOW}[INFO]{RESET} BOT AKTIF. TEKAN CTRL+C UNTUK BERHENTI.\n")
+url_ai = "https://api.openai.com/v1/chat/completions"
 
-# Fungsi Log Per Channel
-async def log(channel_name, text):
+# Log
+os.makedirs("log", exist_ok=True)
+
+# Input User
+print("\nPILIH MODE:")
+print("1. Kirim biasa (tidak dihapus)")
+print("2. Kirim lalu hapus otomatis")
+print("3. AI Chat (pesan dari GPT-3.5)")
+print("4. Kirim emoticon random")
+mode = input("Mode: ").strip()
+
+min_delay = int(input("Delay minimal antar pesan (detik): "))
+max_delay = int(input("Delay maksimal antar pesan (detik): "))
+
+hapus_delay = 0
+if mode == "2":
+    hapus_delay = int(input("Delay hapus pesan (detik): "))
+
+
+async def log(channel_name, content):
     now = datetime.now().strftime("%H:%M:%S")
-    log_path = f"log_{channel_name}.txt"
-    with open(log_path, "a") as f:
-        f.write(f"[{now}] {text}\n")
+    with open(f"log/{channel_name}.txt", "a") as f:
+        f.write(f"[{now}] {content}\n")
 
-# Fungsi Ambil Respon AI dari OpenAI
-async def ai_response():
-    prompt = random.choice(messages)
-    url = "https://api.openai.com/v1/chat/completions"
-    headers_ai = {
-        "Authorization": f"Bearer {openai_key}",
-        "Content-Type": "application/json"
-    }
+
+async def chat_ai(prompt):
     payload = {
         "model": "gpt-3.5-turbo",
         "messages": [{"role": "user", "content": prompt}],
-        "max_tokens": 50,
-        "temperature": 0.7
+        "max_tokens": 100
     }
     async with aiohttp.ClientSession() as session:
-        async with session.post(url, headers=headers_ai, json=payload) as res:
-            if res.status == 200:
-                data = await res.json()
-                reply = data["choices"][0]["message"]["content"]
-                return reply.strip()
-            else:
-                return "Error from AI"
+        async with session.post(url_ai, headers=headers_ai, json=payload) as res:
+            print(f"[DEBUG AI] Status: {res.status}")
+            response_text = await res.text()
+            print(f"[DEBUG AI] Respon: {response_text}")
 
-# Fungsi Kirim Pesan
-async def kirim_pesan(session, channel_name, channel_id, content, delete_after=False):
-    global total_terkirim
+            if res.status in [200, 201]:
+                data = await res.json()
+                return data["choices"][0]["message"]["content"]
+            else:
+                return "[ERROR AI] Gagal ambil respon"
+
+
+async def kirim_pesan(session, channel_name, channel_id, content):
     try:
-        payload = {'content': content}
-        async with session.post(f'https://discord.com/api/v9/channels/{channel_id}/messages',
-                                json=payload, headers=headers) as res:
+        payload = {"content": content}
+        async with session.post(f"https://discord.com/api/v9/channels/{channel_id}/messages",
+                                json=payload, headers=headers_dc) as res:
             now = datetime.now().strftime("%H:%M:%S")
             if res.status in [200, 201]:
                 data = await res.json()
-                msg_id = data['id']
-                total_terkirim += 1
-                print(f"{GREEN}[✓]{RESET} {now} | {channel_name} | {content}")
-                print(f"{YELLOW}    TOTAL TERKIRIM: {total_terkirim}{RESET}")
-                await log(channel_name, f">> {content}")
+                msg_id = data["id"]
+                print(f"[✓] {now} | {channel_name} | {content}")
+                await log(channel_name, content)
 
-                if delete_after:
+                if mode == "2":
+                    await asyncio.sleep(hapus_delay)
                     async with session.delete(
-                        f'https://discord.com/api/v9/channels/{channel_id}/messages/{msg_id}',
-                        headers=headers
+                        f"https://discord.com/api/v9/channels/{channel_id}/messages/{msg_id}",
+                        headers=headers_dc
                     ) as del_res:
                         if del_res.status == 204:
-                            print(f"{RED}[-]{RESET} {now} | PESAN DIHAPUS DI {channel_name}")
+                            print(f"[-] {now} | Pesan dihapus di {channel_name}")
+
             elif res.status == 429:
                 retry = (await res.json()).get("retry_after", 5)
-                print(f"{YELLOW}[RATE LIMIT]{RESET} Menunggu {retry} detik...")
+                print(f"[RATE LIMIT] Tunggu {retry} detik...")
                 await asyncio.sleep(retry)
+
             else:
-                print(f"{RED}[ERROR]{RESET} {res.status} | {await res.text()}")
+                print(f"[ERROR] {res.status} | {await res.text()}")
 
     except Exception as e:
-        print(f"{RED}[EXCEPTION]{RESET} {e}")
-        await log(channel_name, f"[ERROR] {e}")
+        print(f"[EXCEPTION] {e}")
 
-# Main Loop
+
 async def main():
-    global pesan_index
     async with aiohttp.ClientSession() as session:
         while True:
-            pesan_index = (pesan_index + 1) % len(messages)
-            
-            if mode_pilihan == '1':  # No Delete
-                content = messages[pesan_index]
-                tasks = [kirim_pesan(session, name.strip(), cid.strip(), content, delete_after=False)
-                         for name, cid in channels]
-            
-            elif mode_pilihan == '2':  # Delete
-                content = messages[pesan_index]
-                tasks = [kirim_pesan(session, name.strip(), cid.strip(), content, delete_after=True)
-                         for name, cid in channels]
-
-            elif mode_pilihan == '3':  # AI Chat
-                content = await ai_response()
-                tasks = [kirim_pesan(session, name.strip(), cid.strip(), content, delete_after=False)
-                         for name, cid in channels]
-
-            elif mode_pilihan == '4':  # Emot Only
+            if mode == "3":
+                content = await chat_ai("Berikan pesan singkat untuk Discord.")
+            elif mode == "4":
                 content = random.choice(emotes)
-                tasks = [kirim_pesan(session, name.strip(), cid.strip(), content, delete_after=False)
-                         for name, cid in channels]
-
             else:
-                print(f"{RED}[ERROR]{RESET} Mode tidak dikenali!")
-                break
+                content = random.choice(messages)
 
+            tasks = [
+                kirim_pesan(session, name.strip(), cid.strip(), content)
+                for name, cid in channels
+            ]
             await asyncio.gather(*tasks)
+
             delay = random.randint(min_delay, max_delay)
-            print(f"{YELLOW}[INFO]{RESET} Delay berikutnya: {delay} detik\n")
             await asyncio.sleep(delay)
 
-# Run Program
+
 try:
+    print("\nBOT AKTIF. Tekan CTRL+C untuk berhenti.\n")
     asyncio.run(main())
 except KeyboardInterrupt:
-    print(f"{YELLOW}[INFO]{RESET} PROGRAM DIHENTIKAN.")
+    print("\nBot dihentikan.")
