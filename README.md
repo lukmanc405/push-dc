@@ -1,10 +1,9 @@
 # 🚀 push-dc
 
 ![Visitors](https://visitor-badge.laobi.icu/badge?page_id=lukmanc405.push-dc)
-![GitHub Repo stars](https://img.shields.io/github/stars/lukmanc405/push-dc?style=social)
-![GitHub All Releases](https://img.shields.io/github/downloads/lukmanc405/push-dc/total?label=Download)
-
-
+![Downloads](https://img.shields.io/github/downloads/lukmanc405/push-dc/total?color=blue&label=Downloads)
+![Stars](https://img.shields.io/github/stars/lukmanc405/push-dc?style=social)
+[![Join Telegram](https://img.shields.io/badge/Join-Telegram-blue?logo=telegram)](https://t.me/detective_gems)
 
 Bot **Discord** asynchronous untuk mengirim pesan otomatis ke banyak channel dengan berbagai mode: teks biasa, auto delete, AI Chat GPT, dan emoticon custom. Dapat digunakan di **Termux (Android)** maupun **VSCode (PC)**.
 
