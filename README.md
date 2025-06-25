@@ -1,10 +1,10 @@
-# 🤖 Discord AI Auto-Reply Bot – `push-dc`
+# 🚀 push-dc Bot
 
 ![Visitors](https://visitor-badge.laobi.icu/badge?page_id=lukmanc405.push-dc)
 ![GitHub Repo stars](https://img.shields.io/github/stars/lukmanc405/push-dc?style=social)
 ![GitHub All Releases](https://img.shields.io/github/downloads/lukmanc405/push-dc/total?label=Download)
 
-# 🚀 push-dc Bot
+
 
 Bot **Discord** asynchronous untuk mengirim pesan otomatis ke banyak channel dengan berbagai mode: teks biasa, auto delete, AI Chat GPT, dan emoticon custom. Dapat digunakan di **Termux (Android)** maupun **VSCode (PC)**.
 
