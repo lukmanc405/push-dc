@@ -1,4 +1,4 @@
-# 🚀 push-dc Bot
+# 🚀 push-dc
 
 ![Visitors](https://visitor-badge.laobi.icu/badge?page_id=lukmanc405.push-dc)
 ![GitHub Repo stars](https://img.shields.io/github/stars/lukmanc405/push-dc?style=social)
