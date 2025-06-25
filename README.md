@@ -1,95 +1,84 @@
-## 🚀 push-dc Bot
+# 🚀 push-dc Bot
 
-Sebuah bot **Discord** asynchronous untuk mengirim pesan otomatis dengan opsi delete dan log di Termux maupun VSCode.
-
----
-
-### 🔧 Prerequisites
-
-* Termux (Android) atau VSCode (Windows/Linux/macOS)
-* Python ≥ 3.7
-* Akses internet
+Bot **Discord** asynchronous untuk mengirim pesan otomatis ke banyak channel dengan berbagai mode: teks biasa, auto delete, AI Chat GPT, dan emoticon custom. Dapat digunakan di **Termux (Android)** maupun **VSCode (PC)**.
 
 ---
 
-### ⚙️ Setup di Termux
+## ⚙️ Persiapan
 
-1. **Update & Install**
+Siapkan file berikut di folder project:
 
-   ```bash
-   pkg update && pkg upgrade -y
-   pkg install git python openssl -y
-   ```
-2. **Clone Repo**
+- `.env` → Token Discord & API Key OpenAI
+- `channel.txt` → daftar channel (format: `nama,channel_id`)
+- `pesan.txt` → list pesan teks yang akan dikirim
+- `emote.txt` → list emoticon custom Discord
 
-   ```bash
-   git clone https://github.com/lukmanc405/push-dc.git
-   cd push-dc
-   ```
-3. **Install Dependencies**
+**Contoh `.env`:**
 
-   ```bash
-   pip install requests colorama aiohttp
-   ```
+TOKEN=isi_token_discord_anda
+OPENAI_KEY=isi_api_key_openai_anda
 
 ---
 
-### ⚙️ Setup di VSCode
+## 💻 Instalasi
 
-1. **Clone Repo**
+### **1. Termux (Android)**
 
-   ```bash
-   git clone https://github.com/lukmanc405/push-dc.git
-   cd push-dc
-   code .
-   ```
-2. **Virtualenv (opsional)**
+```bash
+pkg update && pkg upgrade -y
+pkg install git python openssl -y
+pip install aiohttp python-dotenv
 
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate  # Linux/macOS
-   .\.venv\Scripts\activate  # Windows
-   ```
-3. **Install Dependencies**
+git clone https://github.com/lukmanc405/push-dc.git
+cd push-dc
 
-   ```bash
-   pip install requests colorama aiohttp
-   ```
+python main.py
+```
+2. VSCode / PC
+```bash
+git clone https://github.com/lukmanc405/push-dc.git
+cd push-dc
 
----
+pip install aiohttp python-dotenv
 
-### 🔑 Konfigurasi
-
-1. **Token Discord**: simpan di `token.txt` (baris pertama).
-2. **Pesan**: tambahkan kata/kalimat di `pesan.txt` (per baris).
-3. **Channel**: format `nama,channel_id` di `channel.txt`.
-
----
-
-### ▶️ Menjalankan Bot
-
+python main.py
+```
+Jika ingin lebih rapi, aktifkan virtual environment:
+```bash
+python -m venv .venv
+source .venv/bin/activate  # Linux/macOS
+.\.venv\Scripts\activate   # Windows
+```
+▶️ Cara Jalankan Bot
 ```bash
 python main.py
 ```
+Ikuti instruksi di terminal:
 
-1. Pilih **AUTO DELETE**? (Y/N)
-2. Jika Y: masukkan **delete delay (detik)**
-3. Masukkan **kirim delay (detik)**
-4. Pilih **VERBOSE MODE**? (Y/N)
-5. Masukkan **rotasi pesan (detik)**
+Pilih Mode:
 
----
+1 = Kirim biasa (tidak dihapus)
 
-### 📋 Fitur Utama
+2 = Kirim lalu hapus otomatis
 
-* ✅ Kirim pesan secara Async ke banyak channel
-* 🗑️ Auto-delete pesan setelah delay
-* 📄 Logging ke `log.txt`
-* 🐌 Penanganan rate-limit (429)
-* 🔄 Rotasi pesan otomatis
+3 = AI Chat (respon dari GPT-3.5)
 
----
+4 = Kirim emoticon dari list
 
-### 🤝 Lisensi
+Atur delay minimal & maksimal antar pesan
 
+Bot akan berjalan otomatis sesuai pengaturan
+
+📋 Fitur Utama
+- Kirim pesan otomatis ke banyak channel
+-  Mode auto-delete pesan setelah delay
+- AI Chat dengan OpenAI GPT-3.5
+- Kirim emoticon custom dari list
+- Log otomatis per channel di folder log/
+- Penanganan rate-limit Discord (429)
+- Rotasi pesan otomatis
+
+🤝 Lisensi
 MIT License © 2025
+
+Bebas digunakan, dimodifikasi, dan didistribusikan. Gunakan dengan bijak, segala risiko ditanggung pengguna.
