@@ -15,13 +15,26 @@ MAGENTA = "\033[95m"
 CYAN = "\033[96m"
 RESET = "\033[0m"
 
-# Load .env
-load_dotenv()
+# === TAMPILKAN PILIHAN MODE ===
+print(f"{CYAN}\nPILIH MODE:{RESET}")
+print(f"{CYAN}1. KIRIM BIASA (TIDAK DIHAPUS){RESET}")
+print(f"{CYAN}2. KIRIM & HAPUS STEALTH (SUPER CEPAT){RESET}")
+print(f"{CYAN}3. AI CHAT (GEMINI){RESET}")
+print(f"{CYAN}4. EMOTICON RANDOM{RESET}")
+mode = input("MODE: ").strip()
 
+min_delay = int(input("DELAY MINIMAL (DETIK): "))
+max_delay = int(input("DELAY MAKSIMAL (DETIK): "))
+
+hapus_delay = 0
+if mode == "2":
+    hapus_delay = 0.2
+
+# === CEK TOKEN & API KEY SETELAH PILIH MODE ===
+load_dotenv()
 TOKEN = os.getenv("TOKEN")
 GEMINI_KEY = os.getenv("GEMINI_API_KEY")
 
-# Jika TOKEN Discord kosong
 if not TOKEN:
     print(f"{MAGENTA}\n[DISCORD] TOKEN TIDAK DITEMUKAN DI .env.{RESET}")
     TOKEN = input("MASUKKAN TOKEN DISCORD BOT KAMU: ").strip()
@@ -29,15 +42,14 @@ if not TOKEN:
         f.write(f"\nTOKEN={TOKEN}")
     print(f"{GREEN}[✓] TOKEN BERHASIL DISIMPAN KE .env{RESET}")
 
-# Jika API Key Gemini kosong
-if not GEMINI_KEY:
-    print(f"{MAGENTA}\n[GEMINI] API KEY TIDAK DITEMUKAN DI .env.{RESET}")
+if mode == "3" and not GEMINI_KEY:
+    print(f"{MAGENTA}\n[GEMINI] API KEY TIDAK DITEMUKAN DI .env{RESET}")
     GEMINI_KEY = input("MASUKKAN API KEY GOOGLE GEMINI: ").strip()
     with open(".env", "a") as f:
         f.write(f"\nGEMINI_API_KEY={GEMINI_KEY}")
     print(f"{GREEN}[✓] API KEY BERHASIL DISIMPAN KE .env{RESET}")
 
-# Load file
+# === LOAD FILE ===
 with open("pesan.txt") as f:
     pesan_pool = [line.strip() for line in f if line.strip()]
 with open("channel.txt") as f:
@@ -61,21 +73,6 @@ url_gemini = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro
 os.makedirs("log", exist_ok=True)
 start_time = time.time()
 total_sent = 0
-
-# Mode Input
-print(f"{CYAN}\nPILIH MODE:{RESET}")
-print(f"{CYAN}1. KIRIM BIASA (TIDAK DIHAPUS){RESET}")
-print(f"{CYAN}2. KIRIM & HAPUS STEALTH (SUPER CEPAT){RESET}")
-print(f"{CYAN}3. AI CHAT (GEMINI){RESET}")
-print(f"{CYAN}4. EMOTICON RANDOM{RESET}")
-mode = input("MODE: ").strip()
-
-min_delay = int(input("DELAY MINIMAL (DETIK): "))
-max_delay = int(input("DELAY MAKSIMAL (DETIK): "))
-
-hapus_delay = 0
-if mode == "2":
-    hapus_delay = 0.2
 
 async def log(channel_name, content):
     now = datetime.now().strftime("%H:%M:%S")
