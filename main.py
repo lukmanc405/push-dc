@@ -30,6 +30,8 @@ hapus_delay = 0.2 if mode == "2" else 0
 
 monitor_admin = input("MONITOR ADMIN? (Y/N): ").strip().upper() == "Y"
 TARGET_USER_IDS = []
+MONITOR_CHANNELS = []
+
 if monitor_admin:
     if not os.path.exists("admin.txt") or os.path.getsize("admin.txt") == 0:
         print(f"{YELLOW}[!] FILE admin.txt KOSONG ATAU BELUM ADA.{RESET}")
@@ -43,6 +45,19 @@ if monitor_admin:
     else:
         with open("admin.txt") as f:
             TARGET_USER_IDS = [int(line.strip()) for line in f if line.strip().isdigit()]
+
+    if not os.path.exists("monitor_channel.txt") or os.path.getsize("monitor_channel.txt") == 0:
+        print(f"{YELLOW}[!] FILE monitor_channel.txt KOSONG ATAU BELUM ADA.{RESET}")
+        monitor_input = input(f"{CYAN}MASUKKAN CHANNEL ID YANG MAU DIMONITOR (pisah koma):{RESET} ").strip()
+        MONITOR_CHANNELS = [id_.strip() for id_ in monitor_input.split(",") if id_.strip().isdigit()]
+        with open("monitor_channel.txt", "w") as f:
+            for id_ in MONITOR_CHANNELS:
+                f.write(f"{id_}\n")
+        print(f"{GREEN}[✓] ID CHANNEL DISIMPAN KE monitor_channel.txt{RESET}")
+    else:
+        with open("monitor_channel.txt") as f:
+            MONITOR_CHANNELS = [line.strip() for line in f if line.strip().isdigit()]
+        print(f"{GREEN}[✓] TOTAL CHANNEL DIMONITOR: {len(MONITOR_CHANNELS)}{RESET}")
 
 start_time = time.time()
 total_sent = 0
@@ -128,40 +143,37 @@ async def kirim_pesan(session, channel_name, channel_id, content):
     except Exception as e:
         print(f"{RED}[EXCEPTION] {e}{RESET}")
 
-async def monitor_admin_status(session):
+async def monitor_admin_semua_channel(session):
     while True:
-        for admin_id in TARGET_USER_IDS:
+        for cid in MONITOR_CHANNELS:
             async with session.get(
-                f"https://discord.com/api/v9/users/{admin_id}/profile",
+                f"https://discord.com/api/v9/channels/{cid}/messages?limit=1",
                 headers=headers_dc
             ) as res:
                 if res.status == 200:
-                    data = await res.json()
-                    status = data.get("user", {}).get("status", "")
-                    if status != "offline":
-                        print(f"{YELLOW}[!] ADMIN ONLINE TERDETEKSI: {admin_id}{RESET}")
-                await asyncio.sleep(1)
+                    messages = await res.json()
+                    if messages:
+                        msg = messages[0]
+                        author_id = msg.get("author", {}).get("id", "")
+                        msg_time = msg.get("timestamp", "")
 
-            for name, cid in channels:
-                async with session.get(
-                    f"https://discord.com/api/v9/channels/{cid.strip()}/messages?limit=1",
-                    headers=headers_dc
-                ) as res:
-                    if res.status == 200:
-                        messages = await res.json()
-                        if messages:
-                            msg = messages[0]
-                            author_id = msg.get("author", {}).get("id", "")
-                            if int(author_id) in TARGET_USER_IDS:
-                                print(f"{RED}[!] ADMIN {author_id} MENGIRIM PESAN: {msg.get('content', '')}{RESET}")
+                        try:
+                            msg_dt = datetime.fromisoformat(msg_time.replace('Z', '+00:00')).timestamp()
+
+                            if int(author_id) in TARGET_USER_IDS and msg_dt >= start_time:
+                                print(f"{RED}[!] ADMIN {author_id} MENGIRIM PESAN DI CHANNEL {cid}{RESET}")
                                 await shutdown_bot(f"ADMIN {author_id} MENGIRIM PESAN!")
-        await asyncio.sleep(10)
+
+                        except Exception as e:
+                            print(f"{YELLOW}[!] GAGAL PARSING WAKTU: {e}{RESET}")
+
+        await asyncio.sleep(5)
 
 async def main():
     print(f"{CYAN}\nBOT AKTIF. TEKAN CTRL+C UNTUK BERHENTI.\n{RESET}")
     async with aiohttp.ClientSession() as session:
-        if monitor_admin:
-            asyncio.create_task(monitor_admin_status(session))
+        if monitor_admin and MONITOR_CHANNELS:
+            asyncio.create_task(monitor_admin_semua_channel(session))
 
         while True:
             if mode == "3":
