@@ -17,7 +17,7 @@ Siapkan file berikut di folder project:
 - `channel.txt` → daftar channel (format: `nama,channel_id`)
 - `pesan.txt` → list pesan teks yang akan dikirim
 - `emote.txt` → list emoticon custom Discord
-
+`monitor_channel.txt` → (Opsional) Daftar ID channel yang dipantau pesan dari admin
 **Contoh `.env`:**
 
 TOKEN=isi_token_discord_anda
