@@ -55,7 +55,7 @@ pip install aiohttp python-dotenv
 git clone https://github.com/lukmanc405/push-dc.git
 cd push-dc
 
-python push-dc.py
+python main.py
 ````
 
 ### 2. **VSCode / PC**
@@ -66,7 +66,7 @@ cd push-dc
 
 pip install aiohttp python-dotenv
 
-python push-dc.py
+python main.py
 ```
 
 > 💡 Rekomendasi: Aktifkan virtual environment
@@ -82,7 +82,7 @@ source .venv/bin/activate  # Linux/macOS
 ## ▶️ Cara Jalankan Bot
 
 ```bash
-python push-dc.py
+python main.py
 ```
 
 Ikuti instruksi di terminal:
